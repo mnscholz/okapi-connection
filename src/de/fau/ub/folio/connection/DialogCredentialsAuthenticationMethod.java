@@ -1,5 +1,6 @@
 package de.fau.ub.folio.connection;
 
+import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ComponentAdapter;
@@ -38,10 +39,9 @@ public class DialogCredentialsAuthenticationMethod extends CredentialsAuthentica
 
 		/** Creates the reusable dialog. */
 		public CustomDialog(Frame aFrame) {
-			super(aFrame, true);
-			
+			super(aFrame);
 			setTitle("Anmelden");
-			
+			setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 			//Create an array of the text and components to be displayed.
 			usernameField = new JTextField();
 			passwordField = new JPasswordField();
@@ -50,15 +50,20 @@ public class DialogCredentialsAuthenticationMethod extends CredentialsAuthentica
 			//Create an array specifying the number of dialog buttons
 			//and their text.
 			Object[] options = {btnLabelProceed, btnLabelCancel};
-
+	
 			//Create the JOptionPane.
 			optionPane = new JOptionPane(contents,
-					JOptionPane.QUESTION_MESSAGE,
+					JOptionPane.PLAIN_MESSAGE,
 					JOptionPane.OK_CANCEL_OPTION,
 					null,
 					options,
 					options[0]);
 			setContentPane(optionPane);
+			// Set window options
+			setAlwaysOnTop(true);
+			setSize(300, 200);
+			setLocationByPlatform(true);
+			setResizable(false);
 
 			//Handle window closing correctly.
 			setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);

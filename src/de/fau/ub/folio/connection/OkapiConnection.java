@@ -2,14 +2,15 @@ package de.fau.ub.folio.connection;
 
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
@@ -181,15 +182,27 @@ public final class OkapiConnection {
 			con.setRequestMethod("POST");
 			con.setRequestProperty("X-Okapi-Tenant", tenant);
 			con.setRequestProperty("Content-type", "application/json");
+			// write the login data to the connection
+			// we do not use the org.json classes in order to
+			// not convert the password data into a string
 			con.setDoOutput(true);
-			JSONObject body = new JSONObject();
-			if (!username.isBlank()) body.put("username", username);
-			if (!userId.isBlank()) body.put("userId", userId);
-			body.put("password", new String(password));
-			OutputStream os = con.getOutputStream();
-			os.write(body.toString().getBytes());
-			os.flush();
-			os.close();
+			BufferedWriter w = new BufferedWriter(new OutputStreamWriter(con.getOutputStream()));
+			w.write("{");
+			if (!username.isBlank()) {
+				w.write("\"username\":\"");
+				w.write(escapeCharsForJSON(username.toCharArray()));
+				w.write("\",");
+			};
+			if (!userId.isBlank()) {
+				w.write("\"userId\":\"");
+				w.write(escapeCharsForJSON(userId.toCharArray()));
+				w.write("\",");
+			};
+			w.write("\"password\":\"");
+			w.write(escapeCharsForJSON(password));
+			w.write("\"}");
+			w.flush();
+			w.close();
 			String token = con.getHeaderField("x-okapi-token");
 			if (token != null) { // we're logged in
 				// it's only here that we get out of this method gracefully;
@@ -211,6 +224,41 @@ public final class OkapiConnection {
 	}
 	
 	
+	private char[] escapeCharsForJSON(char[] chars) {
+		int newlen = chars.length;
+		for (int i = 0; i < chars.length; i++) {
+			if (	   chars[i] == '\\'
+					|| chars[i] == '"'
+					|| chars[i] == '\b'
+					|| chars[i] == '\f'
+					|| chars[i] == '\n'
+					|| chars[i] == '\r'
+					|| chars[i] == '\t'
+					) {
+				newlen++;
+			} 
+			else if ((int) chars[i] < 20) {
+				throw new IllegalArgumentException("illegal character for credentials: " + chars[i]);
+			}
+		}
+		char[] newchars = new char[newlen];
+		int j = 0;
+		for (int i = 0; i < chars.length; i++) {
+			switch (chars[i]) {
+			case '\\': newchars[j++] = '\\'; newchars[j++] = '\\'; break;
+			case '"': newchars[j++] = '\\'; newchars[j++] = '"'; break;
+			case '\b': newchars[j++] = '\\'; newchars[j++] = 'b'; break;
+			case '\f': newchars[j++] = '\\'; newchars[j++] = 'f'; break;
+			case '\n': newchars[j++] = '\\'; newchars[j++] = 'n'; break;
+			case '\r': newchars[j++] = '\\'; newchars[j++] = 'r'; break;
+			case '\t': newchars[j++] = '\\'; newchars[j++] = 't'; break;
+			default: newchars[j++] = chars[i]; 
+			}
+		}
+		return newchars;
+	}
+	
+	
 	public synchronized String authenticate() throws AuthenticationException {
 		if (this.token == null) {
 			this.token = authMethod.getAccessToken(this);
@@ -224,40 +272,54 @@ public final class OkapiConnection {
 	}
 	
 	
-	public static void main(String[] args) throws IOException, URISyntaxException {
-		if (args.length != 4) {
-			throw new IllegalArgumentException("Accepted args: okapi_base_url tenant path method; Found: " + Arrays.toString(args));
+	public static void main(String[] args) {
+		try {
+			if (args.length != 4) {
+				throw new IllegalArgumentException("Accepted args: okapi_base_url tenant path method; Found: " + Arrays.toString(args));
+			}
+			String baseUrl = args[0];
+			String tenant = args[1];
+			String path = args[2];
+			String method = args[3].toUpperCase();
+			URI uri = new URI(baseUrl);
+			
+//		OkapiConnection okapi = new OkapiConnection(uri, tenant, new CliCredentialsAuthenticationMethod());
+			OkapiConnection okapi = new OkapiConnection(uri, tenant, new DialogCredentialsAuthenticationMethod());
+			
+			JSONObject response = null;
+			switch (method) {
+			case "DELETE":
+				okapi.delete(path, null, null);
+				break;
+			case "GET":
+				System.out.println(okapi.get(path, null, null));
+				break;
+			case "POST":
+			case "PUT":
+				BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
+				StringBuilder sb = new StringBuilder();
+				String line = r.readLine();
+				while (line != null) {
+					sb.append(line);
+					line = r.readLine();
+				}
+				if (method == "POST") {
+					response = okapi.postJSON(path, null, new JSONObject(sb.toString()));
+				}
+				else {
+					response = okapi.putJSON(path, null, new JSONObject(sb.toString()));
+				}
+				break;			
+			}
+			if (response != null) {
+				System.out.println(response.toString(2));
+			}
 		}
-		String baseUrl = args[0];
-		String tenant = args[1];
-		String path = args[2];
-		String method = args[3].toUpperCase();
-		URI uri = new URI(baseUrl);
-		OkapiConnection okapi = new OkapiConnection(uri, tenant, new CliCredentialsAuthenticationMethod());
-		switch (method) {
-		case "DELETE":
-			okapi.delete(path, null, null);
-			break;
-		case "GET":
-			okapi.get(path, null, null);
-			break;
-		case "POST":
-		case "PUT":
-			BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
-			StringBuilder sb = new StringBuilder();
-			String line = r.readLine();
-			while (line != null) {
-				sb.append(line);
-				line = r.readLine();
-			}
-			if (method == "POST") {
-				okapi.postJSON(path, null, new JSONObject(sb.toString()));
-			}
-			else {
-				okapi.putJSON(path, null, new JSONObject(sb.toString()));
-			}
-			break;			
+		catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
 		}
+		System.exit(0);
 	}
 	
 }
