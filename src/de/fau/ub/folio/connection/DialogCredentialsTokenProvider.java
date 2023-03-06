@@ -16,11 +16,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-/**
+/**This class shows a Swing dialog window in order to retrieve credentials
+ * from user.
+ * 
  * @author Martin Scholz, Universitätsbibliothek Erlangen-Nürnberg
  *
  */
-public class DialogCredentialsAuthenticationMethod extends CredentialsAuthenticationMethod {
+public class DialogCredentialsTokenProvider extends CredentialsTokenProvider {
 
 	class CustomDialog extends JDialog implements PropertyChangeListener {
 		private static final long serialVersionUID = -825377825371633010L;
@@ -146,13 +148,13 @@ public class DialogCredentialsAuthenticationMethod extends CredentialsAuthentica
 	}
 	
 	
-	public DialogCredentialsAuthenticationMethod() {
+	public DialogCredentialsTokenProvider() {
 		super();
 	}
 
 
 	@Override
-	protected Credentials getCredentials() {
+	protected Credentials getCredentials(OkapiConnection okapi) {
 		if (!isMethodAvailable()) throw new AuthenticationException("no graphics frontend available");
 		CustomDialog dialog = new CustomDialog(null);
 		dialog.setVisible(true);

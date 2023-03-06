@@ -1,16 +1,20 @@
 package de.fau.ub.folio.connection;
 
-public class FixedCredentialsAuthenticationMethod extends CredentialsAuthenticationMethod {
+/**
+ * @author Martin Scholz, Universitätsbibliothek Erlangen-Nürnberg
+ *
+ */
+public class FixedCredentialsTokenProvider extends CredentialsTokenProvider {
 
 	private String username;
 	private String userId;
 	private char[] password;
 	
-	public FixedCredentialsAuthenticationMethod() {
+	public FixedCredentialsTokenProvider() {
 		super();
 	}
 
-	public FixedCredentialsAuthenticationMethod(String username, String userId, char[] password) {
+	public FixedCredentialsTokenProvider(String username, String userId, char[] password) {
 		super();
 		this.username = username;
 		this.userId = userId;
@@ -18,7 +22,7 @@ public class FixedCredentialsAuthenticationMethod extends CredentialsAuthenticat
 	}
 
 	@Override
-	protected Credentials getCredentials() {
+	protected Credentials getCredentials(OkapiConnection okapi) {
 		return new Credentials() {
 			public String username() { return username; }
 			public String userId() { return userId; }

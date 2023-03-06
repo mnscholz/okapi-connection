@@ -1,10 +1,12 @@
 package de.fau.ub.folio.connection;
 
+import java.io.IOException;
+
 /**
  * @author Martin Scholz, Universitätsbibliothek Erlangen-Nürnberg
  *
  */
-public class ConnectionException extends RuntimeException {
+public class ConnectionException extends IOException {
 
 	private static final long serialVersionUID = 3461620836994578126L;
 
@@ -24,11 +26,6 @@ public class ConnectionException extends RuntimeException {
 
 	public ConnectionException(String message, Throwable cause) {
 		super(message, cause);
-		// TODO Auto-generated constructor stub
-	}
-
-	public ConnectionException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
 		// TODO Auto-generated constructor stub
 	}
 

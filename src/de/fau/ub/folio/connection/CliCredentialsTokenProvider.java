@@ -11,13 +11,13 @@ import java.util.Arrays;
  * @author Martin Scholz, Universitätsbibliothek Erlangen-Nürnberg
  *
  */
-public class CliCredentialsAuthenticationMethod extends CredentialsAuthenticationMethod {
+public class CliCredentialsTokenProvider extends CredentialsTokenProvider {
 	
-	public CliCredentialsAuthenticationMethod() {
+	public CliCredentialsTokenProvider() {
 		super();
 	}
 	
-	protected Credentials getCredentials() throws AuthenticationException {
+	protected Credentials getCredentials(OkapiConnection okapi) throws AuthenticationException {
 		Console c = System.console();
 		String user;
 		char[] password;
